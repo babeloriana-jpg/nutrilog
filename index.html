@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1419">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>NutriLog</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f1419;--surface:#1a2028;--surface2:#232d38;--surface3:#2c3845;
+  --text:#e8edf2;--text2:#8899aa;--text3:#5a6b7c;
+  --accent:#4fc3f7;--accent2:#29b6f6;--accent-dim:rgba(79,195,247,.12);
+  --green:#66bb6a;--green-dim:rgba(102,187,106,.12);
+  --orange:#ffa726;--orange-dim:rgba(255,167,38,.12);
+  --pink:#ec407a;--pink-dim:rgba(236,64,122,.12);
+  --purple:#ab47bc;--purple-dim:rgba(171,71,188,.12);
+  --amber:#ffca28;--amber-dim:rgba(255,202,40,.12);
+  --teal:#26a69a;--teal-dim:rgba(38,166,154,.12);
+  --rose:#f48fb1;--rose-dim:rgba(244,143,177,.12);
+  --lime:#aed581;--lime-dim:rgba(174,213,129,.12);
+  --radius:12px;--radius-sm:8px;
+  padding-top:env(safe-area-inset-top,0);padding-bottom:env(safe-area-inset-bottom,0);
+}
+html{scroll-padding-top:env(safe-area-inset-top,0)}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
+button{font:inherit;border:none;cursor:pointer;background:none;color:inherit}
+input,textarea,select{font:inherit;border:none;background:var(--surface2);color:var(--text);border-radius:var(--radius-sm);padding:10px 14px;width:100%;outline:none}
+input:focus,textarea:focus,select:focus{box-shadow:0 0 0 2px var(--accent)}
+textarea{resize:vertical;min-height:60px}
+
+.app{display:flex;flex-direction:column;height:100%;max-width:480px;margin:0 auto;overflow:hidden}
+
+.header{padding:16px 20px 12px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.header h1{font-size:20px;font-weight:700;letter-spacing:-.3px}
+.header h1 span{color:var(--accent);font-weight:300}
+.header-actions{display:flex;gap:8px}
+.icon-btn{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--surface);transition:background .15s}
+.icon-btn:hover{background:var(--surface2)}
+.icon-btn svg{width:20px;height:20px;stroke:var(--text2);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+.nav{display:flex;padding:0 20px;gap:4px;flex-shrink:0}
+.nav-btn{padding:8px 16px;border-radius:20px;font-size:13px;font-weight:600;color:var(--text2);transition:all .2s}
+.nav-btn.active{background:var(--accent-dim);color:var(--accent)}
+
+.main{flex:1;overflow-y:auto;padding:12px 20px 100px;-webkit-overflow-scrolling:touch}
+
+.cal-strip{display:flex;gap:6px;padding:8px 0 16px;overflow-x:auto;scrollbar-width:none}
+.cal-strip::-webkit-scrollbar{display:none}
+.cal-day{display:flex;flex-direction:column;align-items:center;min-width:46px;padding:8px 6px;border-radius:var(--radius);cursor:pointer;transition:all .15s}
+.cal-day .dow{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px}
+.cal-day .dom{font-size:18px;font-weight:700;margin-top:2px}
+.cal-day .dot{width:5px;height:5px;border-radius:50%;margin-top:4px;background:transparent}
+.cal-day.has-entries .dot{background:var(--accent)}
+.cal-day.today{background:var(--surface)}
+.cal-day.selected{background:var(--accent-dim)}
+.cal-day.selected .dow,.cal-day.selected .dom{color:var(--accent)}
+
+.quick-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:8px 0}
+.quick-btn{display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 4px;border-radius:var(--radius);transition:all .15s;-webkit-tap-highlight-color:transparent}
+.quick-btn:active{transform:scale(.95)}
+.quick-btn .qicon{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px}
+.quick-btn .qlabel{font-size:10px;font-weight:600;letter-spacing:.2px;text-align:center;line-height:1.2}
+
+.quick-btn.food{background:var(--green-dim)}.quick-btn.food .qicon{background:var(--green-dim)}.quick-btn.food .qlabel{color:var(--green)}
+.quick-btn.water{background:var(--accent-dim)}.quick-btn.water .qicon{background:var(--accent-dim)}.quick-btn.water .qlabel{color:var(--accent)}
+.quick-btn.protein{background:var(--orange-dim)}.quick-btn.protein .qicon{background:var(--orange-dim)}.quick-btn.protein .qlabel{color:var(--orange)}
+.quick-btn.coffee{background:var(--purple-dim)}.quick-btn.coffee .qicon{background:var(--purple-dim)}.quick-btn.coffee .qlabel{color:var(--purple)}
+.quick-btn.tea{background:var(--amber-dim)}.quick-btn.tea .qicon{background:var(--amber-dim)}.quick-btn.tea .qlabel{color:var(--amber)}
+.quick-btn.supplement{background:var(--teal-dim)}.quick-btn.supplement .qicon{background:var(--teal-dim)}.quick-btn.supplement .qlabel{color:var(--teal)}
+.quick-btn.toilet{background:var(--rose-dim)}.quick-btn.toilet .qicon{background:var(--rose-dim)}.quick-btn.toilet .qlabel{color:var(--rose)}
+.quick-btn.activity{background:var(--lime-dim)}.quick-btn.activity .qicon{background:var(--lime-dim)}.quick-btn.activity .qlabel{color:var(--lime)}
+
+.section-label{font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;padding:16px 0 8px;font-weight:600}
+.entry-list{display:flex;flex-direction:column;gap:6px}
+.entry-card{background:var(--surface);border-radius:var(--radius);padding:14px 16px;display:flex;align-items:flex-start;gap:12px;position:relative}
+.entry-card .etype{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.entry-card .einfo{flex:1;min-width:0}
+.entry-card .ecat{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.entry-card .edesc{font-size:14px;margin-top:2px;line-height:1.4;word-break:break-word}
+.entry-card .etime{font-size:11px;color:var(--text3);margin-top:4px}
+.entry-card .edelete{position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s}
+.entry-card:hover .edelete,.entry-card:active .edelete{opacity:1}
+.entry-card .edelete:hover{background:var(--surface2)}
+
+.entry-card.food .etype{background:var(--green-dim)}.entry-card.food .ecat{color:var(--green)}
+.entry-card.water .etype{background:var(--accent-dim)}.entry-card.water .ecat{color:var(--accent)}
+.entry-card.protein .etype{background:var(--orange-dim)}.entry-card.protein .ecat{color:var(--orange)}
+.entry-card.coffee .etype{background:var(--purple-dim)}.entry-card.coffee .ecat{color:var(--purple)}
+.entry-card.tea .etype{background:var(--amber-dim)}.entry-card.tea .ecat{color:var(--amber)}
+.entry-card.supplement .etype{background:var(--teal-dim)}.entry-card.supplement .ecat{color:var(--teal)}
+.entry-card.toilet .etype{background:var(--rose-dim)}.entry-card.toilet .ecat{color:var(--rose)}
+.entry-card.activity .etype{background:var(--lime-dim)}.entry-card.activity .ecat{color:var(--lime)}
+
+.empty-state{text-align:center;padding:40px 20px;color:var(--text3)}
+.empty-state .emoj{font-size:40px;margin-bottom:12px}
+.empty-state p{font-size:14px;line-height:1.5}
+
+.wellbeing-card{background:var(--surface);border-radius:var(--radius);padding:16px;margin-top:12px}
+.wellbeing-card h3{font-size:13px;color:var(--text2);font-weight:600;margin-bottom:10px}
+.wb-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.wb-tag{padding:6px 12px;border-radius:16px;font-size:12px;font-weight:600;background:var(--surface2);color:var(--text2);transition:all .15s}
+.wb-tag.active{background:var(--accent-dim);color:var(--accent)}
+.wb-note textarea{font-size:13px;background:var(--surface2);min-height:50px}
+
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+.modal-overlay.open{opacity:1;pointer-events:auto}
+.modal{background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:20px 20px calc(20px + env(safe-area-inset-bottom,0));transform:translateY(100%);transition:transform .3s ease;max-height:85vh;overflow-y:auto}
+.modal-overlay.open .modal{transform:translateY(0)}
+.modal-handle{width:36px;height:4px;border-radius:2px;background:var(--surface3);margin:0 auto 16px}
+.modal h2{font-size:18px;font-weight:700;margin-bottom:16px}
+.modal .field{margin-bottom:14px}
+.modal .field label{display:block;font-size:12px;color:var(--text2);font-weight:600;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+.modal .field-row{display:flex;gap:8px}
+.modal .btn-primary{width:100%;padding:14px;border-radius:var(--radius);font-weight:700;font-size:15px;background:var(--accent);color:#0f1419;margin-top:4px;transition:opacity .15s}
+.modal .btn-primary:active{opacity:.8}
+.modal .btn-secondary{width:100%;padding:12px;border-radius:var(--radius);font-weight:600;font-size:14px;color:var(--text2);margin-top:8px}
+
+.vessel-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.vessel-chip{padding:6px 12px;border-radius:16px;font-size:12px;background:var(--surface2);color:var(--text2);transition:all .15s}
+.vessel-chip.active{background:var(--accent-dim);color:var(--accent)}
+
+/* Preset chips for protein/supplement/toilet/activity */
+.preset-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.preset-chip{padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;background:var(--surface2);color:var(--text2);transition:all .15s;text-align:left;line-height:1.3}
+.preset-chip:active{transform:scale(.97)}
+.preset-chip.active{background:var(--accent-dim);color:var(--accent)}
+.preset-chip .pdetail{font-size:11px;font-weight:400;color:var(--text3);margin-top:2px}
+.preset-chip.active .pdetail{color:var(--accent)}
+
+.report-view{padding-bottom:40px}
+.report-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px}
+.report-range{display:flex;gap:8px;align-items:center}
+.report-range button{width:32px;height:32px;border-radius:50%;background:var(--surface);display:flex;align-items:center;justify-content:center}
+.report-range span{font-size:14px;font-weight:600;min-width:140px;text-align:center}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.stat-card{background:var(--surface);border-radius:var(--radius);padding:14px;text-align:center}
+.stat-card .sval{font-size:24px;font-weight:700}
+.stat-card .slbl{font-size:11px;color:var(--text2);margin-top:2px;text-transform:uppercase;letter-spacing:.5px}
+.day-summary{background:var(--surface);border-radius:var(--radius);padding:14px 16px;margin-bottom:6px}
+.day-summary .ds-date{font-size:13px;font-weight:700;margin-bottom:6px}
+.day-summary .ds-items{font-size:12px;color:var(--text2);line-height:1.6}
+.export-btns{display:flex;gap:8px;margin-top:16px}
+.export-btn{flex:1;padding:12px;border-radius:var(--radius);font-weight:700;font-size:13px;text-align:center;transition:all .15s}
+.export-btn.csv{background:var(--green-dim);color:var(--green)}
+.export-btn.json{background:var(--accent-dim);color:var(--accent)}
+
+.settings-view .setting-group{margin-bottom:20px}
+.settings-view .setting-group h3{font-size:13px;color:var(--text2);font-weight:600;margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px}
+.vessel-list{display:flex;flex-direction:column;gap:6px}
+.vessel-item{background:var(--surface);border-radius:var(--radius-sm);padding:12px 14px;display:flex;justify-content:space-between;align-items:center}
+.vessel-item .vname{font-size:14px;font-weight:600}
+.vessel-item .vsize{font-size:12px;color:var(--text2)}
+.vessel-item .vdel{color:var(--pink);font-size:12px;font-weight:600}
+.add-vessel-form{display:flex;gap:8px;margin-top:8px}
+.add-vessel-form input{flex:1}
+.add-vessel-form button{padding:10px 16px;border-radius:var(--radius-sm);background:var(--accent);color:#0f1419;font-weight:700;font-size:13px;white-space:nowrap}
+
+@media(max-width:380px){.quick-grid{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal" id="modal"></div>
+</div>
+<script>
+(function(){
+'use strict';
+
+const STORE_KEY='nutrilog_data';
+const VESSELS_KEY='nutrilog_vessels';
+const WELLBEING_KEY='nutrilog_wellbeing';
+
+function loadEntries(){try{return JSON.parse(localStorage.getItem(STORE_KEY))||[]}catch(e){return[]}}
+function saveEntries(entries){try{localStorage.setItem(STORE_KEY,JSON.stringify(entries))}catch(e){console.error(e)}}
+function loadVessels(){try{return JSON.parse(localStorage.getItem(VESSELS_KEY))||defaultVessels()}catch(e){return defaultVessels()}}
+function saveVessels(v){try{localStorage.setItem(VESSELS_KEY,JSON.stringify(v))}catch(e){}}
+function loadWellbeing(){try{return JSON.parse(localStorage.getItem(WELLBEING_KEY))||{}}catch(e){return{}}}
+function saveWellbeing(w){try{localStorage.setItem(WELLBEING_KEY,JSON.stringify(w))}catch(e){}}
+function defaultVessels(){return[{id:'v1',name:'Kubek do kawy',ml:250},{id:'v2',name:'Szklanka na wodę',ml:330},{id:'v3',name:'Duży kubek',ml:400}]}
+
+let entries=loadEntries();
+let vessels=loadVessels();
+let wellbeing=loadWellbeing();
+let selectedDate=todayStr();
+let currentView='log';
+let reportWeekOffset=0;
+
+function todayStr(){return new Date().toISOString().slice(0,10)}
+function pad(n){return String(n).padStart(2,'0')}
+function formatTime(d){return pad(d.getHours())+':'+pad(d.getMinutes())}
+function formatDatePL(str){const d=new Date(str+'T12:00:00');const days=['Niedz','Pon','Wt','Śr','Czw','Pt','Sob'];const months=['sty','lut','mar','kwi','maj','cze','lip','sie','wrz','paź','lis','gru'];return days[d.getDay()]+', '+d.getDate()+' '+months[d.getMonth()]}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+
+const CATEGORIES={
+  food:{label:'Jedzenie',emoji:'🍽️',color:'food'},
+  water:{label:'Picie',emoji:'💧',color:'water'},
+  protein:{label:'Białko',emoji:'💪',color:'protein'},
+  coffee:{label:'Kawa',emoji:'☕',color:'coffee'},
+  tea:{label:'Herbata',emoji:'🍵',color:'tea'},
+  supplement:{label:'Suplement',emoji:'💊',color:'supplement'},
+  toilet:{label:'Toaleta',emoji:'🚻',color:'toilet'},
+  activity:{label:'Aktywność',emoji:'🏋️',color:'activity'}
+};
+
+const SUPPLEMENT_PRESETS=['Magnez','Selen','Omega-3','Witamina C','Witamina D','Ashwagandha'];
+const PROTEIN_PRESETS=[
+  {label:'WPI Izolat Herolab',detail:'1 miarka, ~17g białka'},
+  {label:'Pudding proteinowy Lidl',detail:'~11g białka'}
+];
+const TOILET_PRESETS=[{label:'Nr 1',emoji:'💦'},{label:'Nr 2',emoji:'💩'}];
+const ACTIVITY_PRESETS=[
+  {label:'Ćwiczenia',emoji:'🏋️'},
+  {label:'Spacer',emoji:'🚶‍♀️'},
+  {label:'Szybki spacer',emoji:'🏃‍♀️'},
+  {label:'HIIT',emoji:'⚡'}
+];
+
+const WB_TAGS=['Energia ⚡','Zmęczenie 😴','Dobry sen 😊','Słaby sen 😩','Ból głowy 🤕','Suchy język 👅','Pieczenie kl.pierś. 🔥','Częste WC 🚽','Dobry nastrój 🌞','Wzdęcia 🫧','Mgła mózgowa 🧠','Bóle mięśni/stawów 💪','Zamulenie/zaspanie 😶‍🌫️','Zatwardzenie 🫤'];
+
+// ── Render ──
+function render(){
+  const app=document.getElementById('app');
+  app.innerHTML=`
+    <div class="header">
+      <h1>Nutri<span>Log</span></h1>
+      <div class="header-actions">
+        <button class="icon-btn" onclick="NL.setView('settings')" title="Ustawienia">
+          <svg viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="nav">
+      <button class="nav-btn ${currentView==='log'?'active':''}" onclick="NL.setView('log')">Dziennik</button>
+      <button class="nav-btn ${currentView==='report'?'active':''}" onclick="NL.setView('report')">Raport</button>
+      <button class="nav-btn ${currentView==='settings'?'active':''}" onclick="NL.setView('settings')">Ustawienia</button>
+    </div>
+    <div class="main">
+      ${currentView==='log'?renderLog():currentView==='report'?renderReport():renderSettings()}
+    </div>
+  `;
+  setTimeout(()=>{const sel=document.querySelector('.cal-day.selected');if(sel)sel.scrollIntoView({inline:'center',block:'nearest',behavior:'smooth'})},50);
+}
+
+function renderLog(){
+  const dayEntries=entries.filter(e=>e.date===selectedDate).sort((a,b)=>a.timestamp-b.timestamp);
+  const wbKey='wb_'+selectedDate;
+  const wb=wellbeing[wbKey]||{};
+  return `
+    ${renderCalStrip()}
+    <div class="quick-grid">
+      ${Object.entries(CATEGORIES).map(([key,cat])=>`
+        <button class="quick-btn ${cat.color}" onclick="NL.openAdd('${key}')">
+          <div class="qicon">${cat.emoji}</div>
+          <div class="qlabel">${cat.label}</div>
+        </button>
+      `).join('')}
+    </div>
+    <div class="section-label">Wpisy — ${formatDatePL(selectedDate)}</div>
+    <div class="entry-list">
+      ${dayEntries.length?dayEntries.map(e=>{
+        const cat=CATEGORIES[e.category]||CATEGORIES.food;
+        return `<div class="entry-card ${cat.color}">
+          <div class="etype">${cat.emoji}</div>
+          <div class="einfo">
+            <div class="ecat">${cat.label}</div>
+            <div class="edesc">${escHtml(e.description)}</div>
+            <div class="etime">${e.timeStr}</div>
+          </div>
+          <button class="edelete" onclick="NL.deleteEntry('${e.id}')" title="Usuń">
+            <svg width="14" height="14" viewBox="0 0 24 24" stroke="var(--pink)" fill="none" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>`;
+      }).join(''):`
+        <div class="empty-state">
+          <div class="emoj">📝</div>
+          <p>Brak wpisów na ten dzień.<br>Tapnij kategorię powyżej, żeby dodać.</p>
+        </div>
+      `}
+    </div>
+    <div class="wellbeing-card">
+      <h3>🌿 Samopoczucie</h3>
+      <div class="wb-tags">
+        ${WB_TAGS.map(t=>`
+          <button class="wb-tag ${(wb.tags||[]).includes(t)?'active':''}" onclick="NL.toggleWbTag('${wbKey}',\`${t}\`)">${t}</button>
+        `).join('')}
+      </div>
+      <div class="wb-note">
+        <textarea placeholder="Dodatkowe notatki o samopoczuciu..." onchange="NL.setWbNote('${wbKey}',this.value)">${escHtml(wb.note||'')}</textarea>
+      </div>
+    </div>
+  `;
+}
+
+function renderCalStrip(){
+  const today=new Date();
+  const days=[];
+  for(let i=-7;i<=7;i++){
+    const d=new Date(today);d.setDate(today.getDate()+i);
+    const ds=d.toISOString().slice(0,10);
+    const hasEntries=entries.some(e=>e.date===ds);
+    const isToday=ds===todayStr();
+    const isSelected=ds===selectedDate;
+    const dow=['Nd','Pn','Wt','Śr','Cz','Pt','So'][d.getDay()];
+    days.push(`<div class="cal-day ${isToday?'today':''} ${isSelected?'selected':''} ${hasEntries?'has-entries':''}" onclick="NL.selectDate('${ds}')">
+      <span class="dow">${dow}</span>
+      <span class="dom">${d.getDate()}</span>
+      <span class="dot"></span>
+    </div>`);
+  }
+  return `<div class="cal-strip">${days.join('')}</div>`;
+}
+
+function renderReport(){
+  const now=new Date();
+  const weekStart=new Date(now);
+  weekStart.setDate(now.getDate()-now.getDay()+1+(reportWeekOffset*7));
+  const weekEnd=new Date(weekStart);weekEnd.setDate(weekStart.getDate()+6);
+  const startStr=weekStart.toISOString().slice(0,10);
+  const endStr=weekEnd.toISOString().slice(0,10);
+  const weekEntries=entries.filter(e=>e.date>=startStr&&e.date<=endStr);
+
+  const counts={};
+  Object.keys(CATEGORIES).forEach(k=>counts[k]=weekEntries.filter(e=>e.category===k).length);
+
+  // Protein grams estimation
+  let proteinGrams=0;
+  weekEntries.filter(e=>e.category==='protein').forEach(e=>{
+    if(e.description.includes('Herolab'))proteinGrams+=17;
+    else if(e.description.includes('Pudding'))proteinGrams+=11;
+  });
+
+  const dayGroups={};
+  for(let i=0;i<7;i++){
+    const d=new Date(weekStart);d.setDate(weekStart.getDate()+i);
+    const ds=d.toISOString().slice(0,10);
+    dayGroups[ds]=weekEntries.filter(e=>e.date===ds);
+  }
+
+  return `<div class="report-view">
+    <div class="report-header">
+      <div class="section-label" style="padding:0">Raport tygodniowy</div>
+      <div class="report-range">
+        <button onclick="NL.shiftWeek(-1)"><svg width="16" height="16" viewBox="0 0 24 24" stroke="var(--text2)" fill="none" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
+        <span>${formatDatePL(startStr).split(', ')[1]} — ${formatDatePL(endStr).split(', ')[1]}</span>
+        <button onclick="NL.shiftWeek(1)"><svg width="16" height="16" viewBox="0 0 24 24" stroke="var(--text2)" fill="none" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></button>
+      </div>
+    </div>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="sval" style="color:var(--green)">${counts.food}</div><div class="slbl">Posiłki</div></div>
+      <div class="stat-card"><div class="sval" style="color:var(--accent)">${counts.water}</div><div class="slbl">Picie</div></div>
+      <div class="stat-card"><div class="sval" style="color:var(--orange)">${counts.protein}</div><div class="slbl">Białko${proteinGrams?' (~'+proteinGrams+'g)':''}</div></div>
+      <div class="stat-card"><div class="sval" style="color:var(--purple)">${counts.coffee}</div><div class="slbl">Kawa</div></div>
+      <div class="stat-card"><div class="sval" style="color:var(--amber)">${counts.tea}</div><div class="slbl">Herbata</div></div>
+      <div class="stat-card"><div class="sval" style="color:var(--teal)">${counts.supplement}</div><div class="slbl">Suplementy</div></div>
+      <div class="stat-card"><div class="sval" style="color:var(--rose)">${counts.toilet}</div><div class="slbl">Toaleta</div></div>
+      <div class="stat-card"><div class="sval" style="color:var(--lime)">${counts.activity}</div><div class="slbl">Aktywność</div></div>
+    </div>
+    <div class="section-label">Dzień po dniu</div>
+    ${Object.entries(dayGroups).map(([date,dEntries])=>`
+      <div class="day-summary">
+        <div class="ds-date">${formatDatePL(date)}</div>
+        <div class="ds-items">${dEntries.length?dEntries.map(e=>`<div>${CATEGORIES[e.category]?.emoji||'📝'} ${e.timeStr} — ${escHtml(e.description)}</div>`).join(''):'<div style="color:var(--text3)">Brak wpisów</div>'}</div>
+      </div>
+    `).join('')}
+    <div class="export-btns">
+      <button class="export-btn csv" onclick="NL.exportCSV('${startStr}','${endStr}')">⬇ CSV</button>
+      <button class="export-btn json" onclick="NL.exportJSON('${startStr}','${endStr}')">⬇ JSON</button>
+    </div>
+  </div>`;
+}
+
+function renderSettings(){
+  return `<div class="settings-view">
+    <div class="setting-group">
+      <h3>🥤 Moje naczynia / kubki</h3>
+      <p style="font-size:12px;color:var(--text3);margin-bottom:10px">Zdefiniuj kubki i szklanki, żeby szybko dodawać picie</p>
+      <div class="vessel-list">
+        ${vessels.map(v=>`
+          <div class="vessel-item">
+            <div><span class="vname">${escHtml(v.name)}</span> <span class="vsize">${v.ml} ml</span></div>
+            <button class="vdel" onclick="NL.deleteVessel('${v.id}')">Usuń</button>
+          </div>
+        `).join('')}
+      </div>
+      <div class="add-vessel-form">
+        <input id="new-vessel-name" placeholder="Nazwa (np. Kubek duży)">
+        <input id="new-vessel-ml" placeholder="ml" type="number" style="max-width:80px">
+        <button onclick="NL.addVessel()">Dodaj</button>
+      </div>
+    </div>
+    <div class="setting-group">
+      <h3>📊 Dane</h3>
+      <button class="export-btn json" style="display:block;margin-top:8px" onclick="NL.exportAllJSON()">⬇ Eksportuj wszystkie dane (JSON)</button>
+      <button class="export-btn csv" style="display:block;margin-top:8px" onclick="NL.clearAllData()">🗑️ Wyczyść wszystkie dane</button>
+    </div>
+    <div class="setting-group">
+      <h3 style="margin-bottom:4px">ℹ️ O aplikacji</h3>
+      <p style="font-size:13px;color:var(--text2);line-height:1.5">NutriLog — dziennik żywieniowy PWA.<br>Dane przechowywane lokalnie w przeglądarce.</p>
+    </div>
+  </div>`;
+}
+
+// ── Modal: Add entry ──
+function openAddModal(category){
+  const cat=CATEGORIES[category];
+  const now=new Date();
+  const isLiquid=['water','coffee','tea'].includes(category);
+  let modalHTML=`<div class="modal-handle"></div><h2>${cat.emoji} ${cat.label}</h2>`;
+
+  if(category==='supplement'){
+    modalHTML+=`
+      <div class="field"><label>Wybierz suplement</label>
+      <div class="preset-chips">
+        ${SUPPLEMENT_PRESETS.map(s=>`<button class="preset-chip" onclick="NL.pickPreset(this,'${s}')">${s}</button>`).join('')}
+        <button class="preset-chip" onclick="NL.pickPreset(this,'__custom')" style="border:1px dashed var(--text3)">Inny...</button>
+      </div></div>
+      <div class="field" id="custom-field" style="display:none">
+        <label>Opisz suplement</label>
+        <textarea id="entry-desc" placeholder="np. Żelazo 28mg" rows="2"></textarea>
+      </div>`;
+  } else if(category==='protein'){
+    modalHTML+=`
+      <div class="field"><label>Wybierz</label>
+      <div class="preset-chips">
+        ${PROTEIN_PRESETS.map(p=>`<button class="preset-chip" onclick="NL.pickPreset(this,'${p.label}')">${p.label}<div class="pdetail">${p.detail}</div></button>`).join('')}
+        <button class="preset-chip" onclick="NL.pickPreset(this,'__custom')" style="border:1px dashed var(--text3)">Inna odżywka...</button>
+      </div></div>
+      <div class="field" id="custom-field" style="display:none">
+        <label>Opisz</label>
+        <textarea id="entry-desc" placeholder="np. białko sojowe 20g" rows="2"></textarea>
+      </div>`;
+  } else if(category==='toilet'){
+    modalHTML+=`
+      <div class="field"><label>Typ</label>
+      <div class="preset-chips">
+        ${TOILET_PRESETS.map(t=>`<button class="preset-chip" onclick="NL.pickPreset(this,'${t.emoji} ${t.label}')">${t.emoji} ${t.label}</button>`).join('')}
+      </div></div>`;
+  } else if(category==='activity'){
+    modalHTML+=`
+      <div class="field"><label>Rodzaj aktywności</label>
+      <div class="preset-chips">
+        ${ACTIVITY_PRESETS.map(a=>`<button class="preset-chip" onclick="NL.pickPreset(this,'${a.emoji} ${a.label}')">${a.emoji} ${a.label}</button>`).join('')}
+      </div></div>
+      <div class="field">
+        <label>Notatka (opcjonalnie)</label>
+        <textarea id="entry-desc" placeholder="np. 45 min, siłownia, nogi" rows="2"></textarea>
+      </div>`;
+  } else {
+    // food, water, coffee, tea
+    if(isLiquid){
+      modalHTML+=`
+        <div class="field"><label>Szybki wybór naczynia</label>
+        <div class="vessel-chips">
+          ${vessels.map(v=>`<button class="vessel-chip" onclick="NL.pickVessel('${v.name}',${v.ml})">${v.name} (${v.ml}ml)</button>`).join('')}
+        </div></div>`;
+    }
+    modalHTML+=`
+      <div class="field">
+        <label>${isLiquid?'Co pijesz? Ile?':'Opisz co jesz'}</label>
+        <textarea id="entry-desc" placeholder="${isLiquid?'np. szklanka wody 330ml':'np. jajecznica 3 jajka, chleb żytni'}" rows="3"></textarea>
+      </div>`;
+  }
+
+  modalHTML+=`
+    <div class="field">
+      <label>Data i godzina</label>
+      <div class="field-row">
+        <input type="date" id="entry-date" value="${selectedDate}">
+        <input type="time" id="entry-time" value="${formatTime(now)}">
+      </div>
+    </div>
+    <button class="btn-primary" onclick="NL.saveEntry('${category}')">Zapisz</button>
+    <button class="btn-secondary" onclick="NL.closeModal()">Anuluj</button>
+  `;
+
+  document.getElementById('modal').innerHTML=modalHTML;
+  openModal();
+}
+
+let selectedPreset=null;
+
+function pickPreset(el,value){
+  selectedPreset=value;
+  document.querySelectorAll('.preset-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  const customField=document.getElementById('custom-field');
+  if(value==='__custom'){
+    if(customField)customField.style.display='block';
+    selectedPreset=null;
+  } else {
+    if(customField)customField.style.display='none';
+  }
+}
+
+function pickVessel(name,ml){
+  const desc=document.getElementById('entry-desc');
+  if(desc)desc.value=name+' ('+ml+'ml)';
+  document.querySelectorAll('.vessel-chip').forEach(c=>c.classList.remove('active'));
+  event.target.classList.add('active');
+}
+
+function saveEntry(category){
+  let desc='';
+
+  if(['supplement','protein','toilet'].includes(category)){
+    if(selectedPreset){
+      desc=selectedPreset;
+    } else {
+      desc=document.getElementById('entry-desc')?.value?.trim()||'';
+    }
+  } else if(category==='activity'){
+    const note=document.getElementById('entry-desc')?.value?.trim()||'';
+    if(selectedPreset){
+      desc=selectedPreset+(note?' — '+note:'');
+    } else {
+      desc=note;
+    }
+  } else {
+    desc=document.getElementById('entry-desc')?.value?.trim()||'';
+  }
+
+  if(!desc){alert('Wybierz opcję lub wpisz opis!');return}
+
+  const date=document.getElementById('entry-date')?.value||selectedDate;
+  const time=document.getElementById('entry-time')?.value||formatTime(new Date());
+  const entry={
+    id:uid(),
+    category,
+    description:desc,
+    date,
+    timeStr:time,
+    timestamp:new Date(date+'T'+time).getTime(),
+    created:Date.now()
+  };
+  entries.push(entry);
+  saveEntries(entries);
+  selectedPreset=null;
+  closeModal();
+  render();
+}
+
+function deleteEntry(id){
+  if(!confirm('Usunąć ten wpis?'))return;
+  entries=entries.filter(e=>e.id!==id);
+  saveEntries(entries);
+  render();
+}
+
+function toggleWbTag(key,tag){
+  if(!wellbeing[key])wellbeing[key]={tags:[],note:''};
+  const tags=wellbeing[key].tags;
+  const idx=tags.indexOf(tag);
+  if(idx>=0)tags.splice(idx,1);else tags.push(tag);
+  saveWellbeing(wellbeing);
+  render();
+}
+function setWbNote(key,note){
+  if(!wellbeing[key])wellbeing[key]={tags:[],note:''};
+  wellbeing[key].note=note;
+  saveWellbeing(wellbeing);
+}
+
+function addVessel(){
+  const name=document.getElementById('new-vessel-name')?.value?.trim();
+  const ml=parseInt(document.getElementById('new-vessel-ml')?.value);
+  if(!name||!ml){alert('Podaj nazwę i pojemność');return}
+  vessels.push({id:uid(),name,ml});
+  saveVessels(vessels);
+  render();
+}
+function deleteVessel(id){
+  vessels=vessels.filter(v=>v.id!==id);
+  saveVessels(vessels);
+  render();
+}
+
+function getWeekEntries(start,end){
+  return entries.filter(e=>e.date>=start&&e.date<=end).sort((a,b)=>a.timestamp-b.timestamp);
+}
+function getWeekWellbeing(start,end){
+  const result={};
+  const s=new Date(start+'T00:00:00');
+  const e=new Date(end+'T00:00:00');
+  for(let d=new Date(s);d<=e;d.setDate(d.getDate()+1)){
+    const ds=d.toISOString().slice(0,10);
+    const key='wb_'+ds;
+    if(wellbeing[key])result[ds]=wellbeing[key];
+  }
+  return result;
+}
+
+function exportCSV(start,end){
+  const we=getWeekEntries(start,end);
+  let csv='Data,Godzina,Kategoria,Opis\n';
+  we.forEach(e=>{csv+='"'+e.date+'","'+e.timeStr+'","'+(CATEGORIES[e.category]?.label||e.category)+'","'+e.description.replace(/"/g,'""')+'"\n'});
+  csv+='\nSamopoczucie\nData,Tagi,Notatka\n';
+  const wbs=getWeekWellbeing(start,end);
+  Object.entries(wbs).forEach(([date,wb])=>{
+    csv+='"'+date+'","'+(wb.tags||[]).join('; ')+'","'+(wb.note||'').replace(/"/g,'""')+'"\n';
+  });
+  downloadFile(csv,'nutrilog_'+start+'_'+end+'.csv','text/csv');
+}
+
+function exportJSON(start,end){
+  const data={
+    period:{start,end},
+    entries:getWeekEntries(start,end),
+    wellbeing:getWeekWellbeing(start,end),
+    vessels,
+    exportDate:new Date().toISOString(),
+    context:'NutriLog export — dane do analizy dietetycznej. Użytkowniczka: kobieta, 44 lata, przed histerektomią, cel: optymalna podaż białka i nawodnienie, przygotowanie do operacji i recovery. Znane objawy: częste oddawanie moczu, suchy/piekący język, sucha skóra, pieczenie w klatce piersiowej. Suplementy: magnez, selen, omega-3, wit.C, wit.D, ashwagandha. Ćwiczenia regularne. Odżywki białkowe: WPI Herolab (~17g/miarka), pudding proteinowy Lidl (~11g).'
+  };
+  downloadFile(JSON.stringify(data,null,2),'nutrilog_'+start+'_'+end+'.json','application/json');
+}
+
+function exportAllJSON(){
+  const data={entries,wellbeing,vessels,exportDate:new Date().toISOString()};
+  downloadFile(JSON.stringify(data,null,2),'nutrilog_all_'+todayStr()+'.json','application/json');
+}
+
+function clearAllData(){
+  if(!confirm('Na pewno chcesz usunąć WSZYSTKIE dane? Tej operacji nie można cofnąć.'))return;
+  if(!confirm('Ostatnia szansa — eksportuj dane najpierw! Kontynuować usuwanie?'))return;
+  entries=[];wellbeing={};
+  saveEntries(entries);saveWellbeing(wellbeing);
+  render();
+}
+
+function downloadFile(content,filename,mime){
+  const blob=new Blob([content],{type:mime+';charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=filename;
+  document.body.appendChild(a);a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function openModal(){document.getElementById('modal-overlay').classList.add('open')}
+function closeModal(){document.getElementById('modal-overlay').classList.remove('open');selectedPreset=null}
+document.getElementById('modal-overlay').addEventListener('click',function(e){if(e.target===this)closeModal()});
+
+function setView(v){currentView=v;render()}
+function selectDate(d){selectedDate=d;render()}
+function shiftWeek(dir){reportWeekOffset+=dir;render()}
+
+function escHtml(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
+
+window.NL={
+  openAdd:openAddModal,saveEntry,deleteEntry,closeModal,
+  setView,selectDate,shiftWeek,
+  pickVessel,pickPreset,addVessel,deleteVessel,
+  toggleWbTag,setWbNote,
+  exportCSV,exportJSON,exportAllJSON,clearAllData
+};
+
+render();
+})();
+</script>
+<script>
+if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js')}
+</script>
+</body>
+</html>
